@@ -1,0 +1,32 @@
+# Venv
+.venv
+
+# cache
+__pycache__/
+*.pyc
+
+# Database
+db.sqlite3
+
+# Static files
+staticfiles/
+
+# Media files
+media/
+
+# Environment variables
+.env
+
+# IDE files
+.vscode/
+.idea/
+
+# Compiled Python files
+*.pyc
+
+# Log files
+*.log
+
+# Dependency directories
+venv/
+__pycache__/
