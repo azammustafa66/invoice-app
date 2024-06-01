@@ -1,25 +1,55 @@
-import { Box, Button, Container, TextField, Typography, Link } from '@mui/material'
+import { useState } from 'react'
+import { Visibility, VisibilityOff } from '@mui/icons-material'
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Link,
+  InputAdornment,
+  IconButton,
+  FormControl,
+  Container,
+  InputLabel,
+  OutlinedInput
+} from '@mui/material'
+import { useForm, Controller } from 'react-hook-form'
+import * as yup from 'yup'
+import { yupResolver } from '@hookform/resolvers/yup'
+
+const validationSchema = yup.object().shape({
+  email: yup.string().email('Invalid email').required('Email is required'),
+  password: yup.string().required('Password is required')
+})
 
 export default function Login() {
+  const [showPassword, setShowPassword] = useState<boolean>(false)
+  const { control, handleSubmit } = useForm({
+    resolver: yupResolver(validationSchema)
+  })
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onSubmit = (data: any) => {
+    console.log(data)
+  }
+
   return (
     <Container
+      component='form'
       maxWidth='sm'
       sx={{
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        height: '100vh',
-        boxShadow: 3,
-        padding: 4,
-        borderRadius: 2
+        minHeight: '100vh'
       }}
+      onSubmit={handleSubmit(onSubmit)}
     >
       <Typography variant='h4' sx={{ mb: 2, fontWeight: '700' }}>
         Login
       </Typography>
       <Box
-        component='form'
         sx={{
           width: '100%',
           display: 'flex',
@@ -27,23 +57,61 @@ export default function Login() {
           alignItems: 'center'
         }}
       >
-        <TextField
-          label='Email'
-          type='email'
-          variant='outlined'
-          fullWidth
-          required
-          sx={{ mb: 2 }}
+        <Controller
+          name='email'
+          control={control}
+          defaultValue=''
+          render={({ field, fieldState }) => (
+            <TextField
+              {...field}
+              label='Email'
+              type='email'
+              variant='outlined'
+              error={fieldState.invalid}
+              helperText={fieldState.error?.message}
+              sx={{ width: '100%', mb: 2 }}
+            />
+          )}
         />
-        <TextField
-          label='Password'
-          type='password'
-          variant='outlined'
-          fullWidth
-          required
-          sx={{ mb: 2 }}
+        <Controller
+          name='password'
+          control={control}
+          defaultValue=''
+          render={({ field, fieldState }) => (
+            <FormControl
+              variant='outlined'
+              sx={{ width: '100%', mb: 2 }}
+              error={fieldState.invalid}
+            >
+              <InputLabel htmlFor='outlined-adornment-password'>Password</InputLabel>
+              <OutlinedInput
+                {...field}
+                id='outlined-adornment-password'
+                type={showPassword ? 'text' : 'password'}
+                endAdornment={
+                  <InputAdornment position='end'>
+                    <IconButton
+                      aria-label='toggle password visibility'
+                      onClick={() => setShowPassword((show) => !show)}
+                      onMouseDown={(e) => e.preventDefault()}
+                      edge='end'
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                }
+                label='Password'
+              />
+              {fieldState.invalid && (
+                <Typography variant='caption' color='error'>
+                  {fieldState.error?.message}
+                </Typography>
+              )}
+            </FormControl>
+          )}
         />
         <Button
+          type='submit'
           variant='contained'
           fullWidth
           sx={{
