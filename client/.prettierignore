@@ -1,0 +1,28 @@
+# Ignore build output
+/dist
+
+# Ignore node_modules
+/node_modules
+
+# Ignore generated files
+/build
+
+# Ignore coverage reports
+/coverage
+
+# Ignore configuration files
+/.eslintrc
+/.babelrc
+/.prettierrc
+/.editorconfig
+
+# Ignore specific files or directories
+/src/assets
+/src/styles
+
+# Ignore django files
+../server/*
+
+#Ignore env files
+.env
+.env.example
