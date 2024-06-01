@@ -3,7 +3,7 @@ from rest_framework.response import Response
 
 class APIResponse(Response):
     def __init__(
-        self, data=None, status=200, message="Success", success=True, **kwargs
+        self, status=200, data=None, message="Success", success=True, **kwargs
     ):
         if data is None:
             data = {}

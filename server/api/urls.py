@@ -3,6 +3,6 @@ from django.urls import path
 from .views import *
 
 urlpatterns = [
-    path("", test_set_tokens, name="test_set_tokens"),
-    path("test", test_get_tokens, name="test_get_tokens"),
+    path("register", RegisterView.as_view(), name="register"),
+    path("login", LoginView.as_view(), name="login"),
 ]

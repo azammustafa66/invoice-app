@@ -1,49 +1,41 @@
-from django.http import HttpRequest
-from rest_framework import status, permissions
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.request import Request
+from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import authenticate
-
-from utils.APIResponse import APIResponse
-from utils.APIError import APIError
 
 
-@api_view(["POST"])
-@permission_classes([permissions.AllowAny])
-def test_set_tokens(req: HttpRequest) -> Response:
-    username = req.data.get("username")
-    password = req.data.get("password")
+from .serializers import *
 
-    if not username or not password:
+
+class RegisterView(generics.GenericAPIView):
+    """
+    Register a new user.
+    """
+
+    serializer_class = RegisterSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request: Request) -> Response:
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            refresh: RefreshToken = RefreshToken.for_user(user)
+            access_token: str = str(refresh.access_token)
+            return Response(
+                status=status.HTTP_201_CREATED,
+                data={
+                    "user": UserSerializer(user).data,
+                    "access_token": access_token,
+                    "refresh_token": str(refresh),
+                },
+            )
         return Response(
-            {"error": "Username and password are required."},
             status=status.HTTP_400_BAD_REQUEST,
+            data=serializer.errors,
         )
 
-    user = authenticate(username=username, password=password)
 
-    if not user:
-        return APIError(
-            status=status.HTTP_400_BAD_REQUEST,
-            message="Invalid credentials.",
-        )
-
-    refresh = RefreshToken.for_user(user)
-    access_token = refresh.access_token
-
-    return APIResponse(
-        data={"access_token": str(access_token), "refresh_token": str(refresh)},
-        status=status.HTTP_200_OK,
-    )
-
-
-@api_view(["GET"])
-@permission_classes([permissions.IsAuthenticated])
-def test_get_tokens(req: HttpRequest) -> APIResponse:
-    return APIResponse(
-        data={"message": "You are authenticated."},
-        status=status.HTTP_200_OK,
-        message="Success",
-        success=True,
-    )
+class LoginView(TokenObtainPairView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = CustomTokenObtainPairSerializer
