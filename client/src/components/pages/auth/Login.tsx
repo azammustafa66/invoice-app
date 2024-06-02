@@ -11,32 +11,29 @@ import {
   FormControl,
   Container,
   InputLabel,
-  OutlinedInput
+  OutlinedInput,
+  Alert,
+  CircularProgress
 } from '@mui/material'
 import { useForm, Controller } from 'react-hook-form'
-import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup'
 
-const validationSchema = yup.object().shape({
-  email: yup.string().email('Invalid email').required('Email is required'),
-  password: yup.string().required('Password is required')
-})
+import useLogin from '../../../hooks/useLogin'
+import { loginValidationSchema } from '../../../utils/validationSchemas'
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState<boolean>(false)
   const { control, handleSubmit } = useForm({
-    resolver: yupResolver(validationSchema)
+    resolver: yupResolver(loginValidationSchema)
   })
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onSubmit = (data: any) => {
-    console.log(data)
-  }
+  const { onSubmit, errorMessage, successMessage, mutation } = useLogin()
 
   return (
     <Container
       component='form'
       maxWidth='sm'
+      noValidate
       sx={{
         display: 'flex',
         flexDirection: 'column',
@@ -49,6 +46,16 @@ export default function Login() {
       <Typography variant='h4' sx={{ mb: 2, fontWeight: '700' }}>
         Login
       </Typography>
+      {errorMessage && (
+        <Alert severity='error' sx={{ mb: 2 }}>
+          {errorMessage}
+        </Alert>
+      )}
+      {successMessage && (
+        <Alert severity='success' sx={{ mb: 2 }}>
+          {successMessage}
+        </Alert>
+      )}
       <Box
         sx={{
           width: '100%',
@@ -58,7 +65,7 @@ export default function Login() {
         }}
       >
         <Controller
-          name='email'
+          name='username'
           control={control}
           defaultValue=''
           render={({ field, fieldState }) => (
@@ -124,8 +131,9 @@ export default function Login() {
             },
             mb: 2
           }}
+          disabled={mutation.isLoading}
         >
-          Login
+          {mutation.isLoading ? <CircularProgress size={24} /> : 'Login'}
         </Button>
         <Typography variant='body2' sx={{ mt: 2 }}>
           Don't have an account?{' '}

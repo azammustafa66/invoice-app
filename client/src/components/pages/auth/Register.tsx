@@ -10,38 +10,28 @@ import {
   IconButton,
   InputLabel,
   OutlinedInput,
-  FormControl
+  FormControl,
+  Alert,
+  CircularProgress
 } from '@mui/material'
 import { useForm, Controller } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
-import * as yup from 'yup'
 import { Visibility, VisibilityOff } from '@mui/icons-material'
 
-const validationSchema = yup.object().shape({
-  name: yup.string().required('Name is required'),
-  email: yup.string().email('Invalid email').required('Email is required'),
-  password: yup.string().required('Password is required'),
-  confirmPassword: yup
-    .string()
-    .oneOf([yup.ref('password')], 'Passwords must match')
-    .required('Confirm Password is required')
-})
+import { registerValidationSchema } from '../../../utils/validationSchemas'
+import useRegister from '../../../hooks/useRegister'
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState<boolean>(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false)
   const { control, handleSubmit } = useForm({
-    resolver: yupResolver(validationSchema)
+    resolver: yupResolver(registerValidationSchema)
   })
+
+  const { onSubmit, errorMessage, successMessage, mutation } = useRegister()
 
   const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
-  }
-
-  
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onSubmit = (data: any) => {
-    console.log(data)
   }
 
   return (
@@ -54,7 +44,6 @@ export default function Register() {
         alignItems: 'center',
         justifyContent: 'center',
         height: '100vh',
-        boxShadow: 3,
         padding: 4,
         borderRadius: 2
       }}
@@ -63,6 +52,16 @@ export default function Register() {
       <Typography variant='h4' sx={{ mb: 2, fontWeight: '700' }}>
         Register
       </Typography>
+      {errorMessage && (
+        <Alert severity='error' sx={{ mb: 2 }}>
+          {errorMessage}
+        </Alert>
+      )}
+      {successMessage && (
+        <Alert severity='success' sx={{ mb: 2 }}>
+          {successMessage}
+        </Alert>
+      )}
       <Box
         sx={{
           width: '100%',
@@ -185,8 +184,9 @@ export default function Register() {
             },
             mb: 2
           }}
+          disabled={mutation.isLoading}
         >
-          Register
+          {mutation.isLoading ? <CircularProgress size={24} /> : 'Register'}
         </Button>
         <Typography variant='body2' sx={{ mt: 2 }}>
           Already have an account?{' '}

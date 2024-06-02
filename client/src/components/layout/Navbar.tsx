@@ -12,25 +12,37 @@ import MenuItem from '@mui/material/MenuItem'
 import DarkModeIcon from '@mui/icons-material/DarkMode'
 import LightModeIcon from '@mui/icons-material/LightMode'
 import PieChartIcon from '@mui/icons-material/PieChart'
+import { Cookies } from 'react-cookie'
+import { Link } from 'react-router-dom'
 
 import { useStore } from '../../utils/store'
-import { Link } from 'react-router-dom'
 import { useTheme } from '@mui/material'
-
-const settings = ['Profile', 'Account', 'Dashboard', 'Logout']
 
 function Navbar() {
   const { theme, setTheme } = useStore()
   const mode = useTheme().palette.mode
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null)
 
-  const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorElUser(event.currentTarget)
-  }
+  const cookies = new Cookies()
+  const name = cookies.get('user')?.name || 'User'
 
   const handleCloseUserMenu = () => {
     setAnchorElUser(null)
   }
+
+  const handleLogOut = () => {
+    cookies.remove('access_token')
+    cookies.remove('refresh_token')
+    cookies.remove('user')
+    window.location.href = '/'
+  }
+
+  const settings = [
+    { label: 'Profile', path: '/profile' },
+    { label: 'Account', path: '/account' },
+    { label: 'Dashboard', path: '/invoices' },
+    { label: 'Logout', action: () => handleLogOut() }
+  ]
 
   return (
     <AppBar position='static' sx={{ backgroundColor: `${mode === 'light' ? '' : '#1e1e1e'}` }}>
@@ -67,11 +79,14 @@ function Navbar() {
                   <LightModeIcon onClick={() => setTheme('light')} />
                 )}
               </IconButton>
-              <Tooltip title='Open settings'>
-                <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                  <Avatar alt='Remy Sharp' src='/static/images/avatar/2.jpg' />
-                </IconButton>
-              </Tooltip>
+
+              {cookies.get('user') && (
+                <Tooltip title='Open settings'>
+                  <IconButton onClick={(e) => setAnchorElUser(e.currentTarget)} sx={{ p: 0 }}>
+                    <Avatar alt={`${name}`} src='/static/images/avatar/2.jpg' />
+                  </IconButton>
+                </Tooltip>
+              )}
             </Box>
           </Box>
           <Menu
@@ -91,8 +106,14 @@ function Navbar() {
             onClose={handleCloseUserMenu}
           >
             {settings.map((setting) => (
-              <MenuItem key={setting} onClick={handleCloseUserMenu}>
-                <Typography textAlign='center'>{setting}</Typography>
+              <MenuItem key={setting.label} onClick={setting.action || handleCloseUserMenu}>
+                {setting.path ? (
+                  <Link to={setting.path} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <Typography textAlign='center'>{setting.label}</Typography>
+                  </Link>
+                ) : (
+                  <Typography textAlign='center'>{setting.label}</Typography>
+                )}
               </MenuItem>
             ))}
           </Menu>
@@ -101,4 +122,5 @@ function Navbar() {
     </AppBar>
   )
 }
+
 export default Navbar

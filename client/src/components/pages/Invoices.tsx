@@ -24,10 +24,7 @@ export default function Home() {
   }
 
   useEffect(() => {
-    // Check if the user is authenticated with JWTs in cookies or localStorage
-    // Redirect to the login page if not authenticated
-    // TODO: Query the invoices from the server and populate the table
-    // For now, we'll just fetch the invoices from the mock data
+    
   }, [])
 
   return (
