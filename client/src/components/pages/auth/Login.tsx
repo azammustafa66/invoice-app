@@ -31,9 +31,8 @@ export default function Login() {
 
   return (
     <Container
-      component='form'
+      component='main'
       maxWidth='sm'
-      noValidate
       sx={{
         display: 'flex',
         flexDirection: 'column',
@@ -41,7 +40,6 @@ export default function Login() {
         justifyContent: 'center',
         minHeight: '100vh'
       }}
-      onSubmit={handleSubmit(onSubmit)}
     >
       <Typography variant='h4' sx={{ mb: 2, fontWeight: '700' }}>
         Login
@@ -57,6 +55,9 @@ export default function Login() {
         </Alert>
       )}
       <Box
+        component='form'
+        onSubmit={handleSubmit(onSubmit)}
+        noValidate
         sx={{
           width: '100%',
           display: 'flex',

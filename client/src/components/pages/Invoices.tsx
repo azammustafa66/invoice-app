@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import { useState } from 'react'
 import {
   Box,
   Container,
@@ -16,16 +16,12 @@ import { useStore } from '../../utils/store'
 import Form from '../Form'
 
 export default function Home() {
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const { isFormOpen, setFormOpen } = useStore()
 
   const handleClose = () => {
     setAnchorEl(null)
   }
-
-  useEffect(() => {
-    
-  }, [])
 
   return (
     <Container sx={{ marginTop: '2rem' }}>

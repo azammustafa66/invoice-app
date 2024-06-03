@@ -1,32 +1,25 @@
-# Venv
-.venv
+# Ignore node_modules directory
+node_modules/
 
-# cache
-__pycache__/
-*.pyc
+# Ignore built JavaScript files
+dist/
 
-# Database
-db.sqlite3
-
-# Static files
-staticfiles/
-
-# Media files
-media/
-
-# Environment variables
+# Ignore environment variables file
 .env
 
-# IDE files
+# Ignore log files
+*.log
+
+# Ignore editor-specific files
 .vscode/
 .idea/
 
-# Compiled Python files
-*.pyc
+# Ignore compiled TypeScript files
+*.js
+*.js.map
 
-# Log files
-*.log
+# Ignore package-lock.json file
+package-lock.json
 
-# Dependency directories
-venv/
-__pycache__/
+# Ignore .DS_Store files (for macOS)
+.DS_Store

@@ -1,7 +1,9 @@
 import { Cookies } from 'react-cookie'
+import { useNavigate } from 'react-router-dom'
 
 export default function useAuth() {
   const cookies = new Cookies()
+  const navigate = useNavigate()
 
   const protectedRoutes = ['/invoices', '/invoice/:id', '/profile', '/account']
 
@@ -23,5 +25,11 @@ export default function useAuth() {
     })
   }
 
-  return { isAuthenticated, isProtectedRoute }
+  const handleAuthentication = (pathname: string) => {
+    if (!isAuthenticated() && isProtectedRoute(pathname)) {
+      navigate('/login', { state: { from: pathname } })
+    }
+  }
+
+  return { isAuthenticated, isProtectedRoute, handleAuthentication }
 }

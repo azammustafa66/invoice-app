@@ -7,15 +7,6 @@ import DOMPurify from 'dompurify'
 import axiosConfig from '../utils/axiosConfig'
 import { LoginFormData, CookieOptions } from '../utils/types'
 
-/*
- * Login hook to handle user registration
- * @returns {object} - mutation, errorMessage, successMessage, onSubmit
- * mutation - react-query useMutation object
- * errorMessage - error message
- * successMessage - success message
- * onSubmit - function to handle form submission
- */
-
 export default function useLogin() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
@@ -29,7 +20,7 @@ export default function useLogin() {
         return response.data
       } catch (error) {
         if (axios.isAxiosError(error)) {
-          const message = error?.response?.data || 'Login failed'
+          const message = error?.response?.data?.message || 'Login failed'
           const cleanMessage = DOMPurify.sanitize(message)
           throw new Error(cleanMessage)
         } else {
@@ -41,7 +32,6 @@ export default function useLogin() {
       onSuccess: (response) => {
         const { access: access_token, refresh: refresh_token, user } = response
 
-        // Securely set cookies in production mode
         const cookieOptions: CookieOptions = { path: '/' }
         if ((import.meta.env.VITE_PRODUCTION_MODE as string) === 'true') {
           cookieOptions.httpOnly = true

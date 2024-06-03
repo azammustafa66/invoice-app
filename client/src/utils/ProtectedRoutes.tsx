@@ -1,18 +1,22 @@
-import { useLocation, Navigate } from 'react-router-dom'
-
+import { useEffect } from 'react'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import useAuth from '../hooks/useAuth'
 
-type ProtectedRoutesProps = {
-  children?: React.ReactNode
+interface ProtectedRouteProps {
+  children?: JSX.Element // Ensure children are optional but accepted
 }
 
-export default function ProtectedRoutes({ children }: ProtectedRoutesProps) {
-  const { isAuthenticated, isProtectedRoute } = useAuth()
-  const { pathname } = useLocation()
+export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { isAuthenticated, isProtectedRoute, handleAuthentication } = useAuth()
+  const location = useLocation()
 
-  if (isProtectedRoute(pathname) && !isAuthenticated()) {
-    return <Navigate to='/login' />
+  useEffect(() => {
+    handleAuthentication(location.pathname)
+  }, [location, handleAuthentication])
+
+  if (!isAuthenticated() && isProtectedRoute(location.pathname)) {
+    return <Navigate to='/login' state={{ from: location }} replace />
   }
 
-  return <>{children}</>
+  return children || <Outlet />
 }
