@@ -66,7 +66,7 @@ export default function Login() {
         }}
       >
         <Controller
-          name='username'
+          name='email'
           control={control}
           defaultValue=''
           render={({ field, fieldState }) => (

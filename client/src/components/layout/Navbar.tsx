@@ -1,4 +1,4 @@
-import * as React from 'react'
+import React from 'react'
 import AppBar from '@mui/material/AppBar'
 import Box from '@mui/material/Box'
 import Toolbar from '@mui/material/Toolbar'
@@ -12,29 +12,32 @@ import MenuItem from '@mui/material/MenuItem'
 import DarkModeIcon from '@mui/icons-material/DarkMode'
 import LightModeIcon from '@mui/icons-material/LightMode'
 import PieChartIcon from '@mui/icons-material/PieChart'
-import { Cookies } from 'react-cookie'
 import { Link } from 'react-router-dom'
+import { Cookies } from 'react-cookie'
 
 import { useStore } from '../../utils/store'
 import { useTheme } from '@mui/material'
+import axiosConfig from '../../utils/axiosConfig'
 
 function Navbar() {
-  const { theme, setTheme } = useStore()
+  const { theme, setTheme, user } = useStore()
   const mode = useTheme().palette.mode
-  const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null)
-
   const cookies = new Cookies()
-  const name = cookies.get('user')?.name || 'User'
+  const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null)
 
   const handleCloseUserMenu = () => {
     setAnchorElUser(null)
   }
 
-  const handleLogOut = () => {
-    cookies.remove('access_token')
-    cookies.remove('refresh_token')
-    cookies.remove('user')
-    window.location.href = '/'
+  const handleLogOut = async () => {
+    const response = await axiosConfig.post('/auth/logout')
+    if (response.status === 200) {
+      cookies.remove('accessToken')
+      cookies.remove('refreshToken')
+      cookies.remove('csrfToken')
+      cookies.remove('user')
+      window.location.href = '/login'
+    }
   }
 
   const settings = [
@@ -80,10 +83,10 @@ function Navbar() {
                 )}
               </IconButton>
 
-              {cookies.get('user') && (
+              {cookies.get('accessToken') && (
                 <Tooltip title='Open settings'>
                   <IconButton onClick={(e) => setAnchorElUser(e.currentTarget)} sx={{ p: 0 }}>
-                    <Avatar alt={`${name}`} src='/static/images/avatar/2.jpg' />
+                    <Avatar alt={user?.name}>{user?.name}</Avatar>
                   </IconButton>
                 </Tooltip>
               )}

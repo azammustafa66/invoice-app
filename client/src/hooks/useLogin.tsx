@@ -1,17 +1,19 @@
 import { useState } from 'react'
-import { useMutation, useQueryClient } from 'react-query'
 import axios from 'axios'
-import { Cookies } from 'react-cookie'
 import DOMPurify from 'dompurify'
+import { Cookies } from 'react-cookie'
+import { useMutation } from 'react-query'
 
 import axiosConfig from '../utils/axiosConfig'
-import { LoginFormData, CookieOptions } from '../utils/types'
+import { useStore } from '../utils/store'
+import { LoginFormData } from '../utils/types'
+import { cookieOptions } from '../utils/data'
 
 export default function useLogin() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const cookies = new Cookies()
-  const queryClient = useQueryClient()
+  const { setUser } = useStore()
 
   const mutation = useMutation(
     async (data: LoginFormData) => {
@@ -20,7 +22,7 @@ export default function useLogin() {
         return response.data
       } catch (error) {
         if (axios.isAxiosError(error)) {
-          const message = error?.response?.data?.message || 'Login failed'
+          const message = error?.response?.data?.message || 'An error occurred'
           const cleanMessage = DOMPurify.sanitize(message)
           throw new Error(cleanMessage)
         } else {
@@ -30,55 +32,31 @@ export default function useLogin() {
     },
     {
       onSuccess: (response) => {
-        const { access: access_token, refresh: refresh_token, user } = response
-
-        const cookieOptions: CookieOptions = { path: '/' }
-        if ((import.meta.env.VITE_PRODUCTION_MODE as string) === 'true') {
-          cookieOptions.httpOnly = true
-          cookieOptions.secure = true
-          cookieOptions.sameSite = 'strict'
-        }
-
-        cookies.set('access_token', access_token, cookieOptions)
-        cookies.set('refresh_token', refresh_token, cookieOptions)
-        cookies.set('user', JSON.stringify(user), cookieOptions)
-
+        const { csrfToken, user, accessToken, refreshToken } = response
+        setUser(user)
+        cookies.set('csrfToken', csrfToken, cookieOptions)
+        cookies.set('accessToken', accessToken, cookieOptions)
+        cookies.set('refreshToken', refreshToken, cookieOptions)
         setSuccessMessage('Logged in successfully')
         setTimeout(() => {
           window.location.href = '/invoices'
-        }, 1500)
-        queryClient.invalidateQueries('user')
+        }, 500)
       },
       onError: (error: Error) => {
-        console.log('Error logging in: ', error)
-        const message = error.message || 'An error occurred'
-        setErrorMessage(message)
+        setErrorMessage(error.message)
       }
     }
   )
 
-  const onSubmit = async (data: LoginFormData) => {
+  const onSubmit = (data: LoginFormData) => {
     setErrorMessage(null)
     setSuccessMessage(null)
-    try {
-      const sanitizedData = {
-        username: DOMPurify.sanitize(data.username),
-        password: DOMPurify.sanitize(data.password)
-      }
-      await mutation.mutateAsync(sanitizedData)
-    } catch (error) {
-      if (error instanceof Error) {
-        setErrorMessage(error.message)
-      } else {
-        setErrorMessage('An unexpected error occurred.')
-      }
+    const sanitizedData = {
+      email: DOMPurify.sanitize(data.email),
+      password: DOMPurify.sanitize(data.password)
     }
+    mutation.mutate(sanitizedData)
   }
 
-  return {
-    mutation,
-    onSubmit,
-    errorMessage,
-    successMessage
-  }
+  return { mutation, errorMessage, successMessage, onSubmit }
 }

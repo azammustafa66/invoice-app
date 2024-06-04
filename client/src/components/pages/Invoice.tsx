@@ -28,7 +28,7 @@ export default function Invoice() {
       }}
     >
       <Box>
-        <Link to={'/'}>
+        <Link to={'/invoices'}>
           <SecondaryTypography
             sx={{
               letterSpacing: '-0.25px',

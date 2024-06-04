@@ -5,6 +5,13 @@ type Store = {
   setTheme: (theme: 'light' | 'dark') => void
   isFormOpen: boolean
   setFormOpen: (isOpen: boolean) => void
+  user: {
+    _id: string
+    email: string
+    name: string
+    refreshToken: string
+  } | null
+  setUser: (user: Store['user']) => void
 }
 
 export const useStore = create<Store>((set) => ({
@@ -14,5 +21,10 @@ export const useStore = create<Store>((set) => ({
     set({ theme })
   },
   isFormOpen: false,
-  setFormOpen: (isFormOpen) => set({ isFormOpen })
+  setFormOpen: (isFormOpen) => set({ isFormOpen }),
+  user: null,
+  setUser: (user) => {
+    localStorage.setItem('user', JSON.stringify(user))
+    set({ user })
+  }
 }))

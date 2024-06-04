@@ -1,6 +1,7 @@
 import { Schema, model, Model } from 'mongoose'
 import * as bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
+import crypto from 'crypto'
 import 'dotenv/config'
 
 import { IUser } from '../types/types'
@@ -48,7 +49,7 @@ userSchema.methods.generateAccessToken = function (this: IUser): string {
       name: this.name
     },
     process.env.ACCESS_TOKEN_SECRET!,
-    { expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN }
+    { expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN! }
   )
 }
 
@@ -56,6 +57,10 @@ userSchema.methods.generateRefreshToken = function (): string {
   return jwt.sign({ _id: this._id }, process.env.REFRESH_TOKEN_SECRET!, {
     expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN!
   })
+}
+
+userSchema.methods.generateCSRFToken = function (): string {
+  return crypto.randomBytes(32).toString('hex')
 }
 
 const User: Model<IUser> = model('User', userSchema)

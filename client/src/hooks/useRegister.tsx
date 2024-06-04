@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useMutation } from 'react-query'
-import axios from 'axios'
 import { Cookies } from 'react-cookie'
+import axios from 'axios'
 import DOMPurify from 'dompurify'
 
 import axiosConfig from '../utils/axiosConfig'
+import { useStore } from '../utils/store'
 import { RegisterFormData } from '../utils/types'
-import { CookieOptions } from '../utils/types'
+import { cookieOptions } from '../utils/data'
 
 /*
  * Register hook to handle user registration
@@ -21,6 +22,7 @@ export default function useRegister() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const cookies = new Cookies()
+  const { setUser } = useStore()
 
   const mutation = useMutation(
     async (data: RegisterFormData) => {
@@ -29,7 +31,7 @@ export default function useRegister() {
         return response.data
       } catch (error) {
         if (axios.isAxiosError(error)) {
-          const message = error?.response?.data?.detail || 'Registration failed'
+          const message = error?.response?.data?.message || 'Registration failed'
           const cleanMessage = DOMPurify.sanitize(message)
           throw new Error(cleanMessage)
         } else {
@@ -39,24 +41,15 @@ export default function useRegister() {
     },
     {
       onSuccess: (response) => {
-        const { access_token, refresh_token, user } = response
-
-        // Securely set cookies in production mode
-        const cookieOptions: CookieOptions = { path: '/' }
-        if ((import.meta.env.VITE_PRODUCTION_MODE as string) === 'true') {
-          cookieOptions.httpOnly = true
-          cookieOptions.secure = true
-          cookieOptions.sameSite = 'strict'
-        }
-
-        cookies.set('access_token', access_token, cookieOptions)
-        cookies.set('refresh_token', refresh_token, cookieOptions)
-        cookies.set('user', JSON.stringify(user), cookieOptions)
-
-        setSuccessMessage('Registered successfully')
+        const { csrfToken, user, accessToken, refreshToken } = response
+        setUser(user)
+        cookies.set('csrfToken', csrfToken, cookieOptions)
+        cookies.set('accessToken', accessToken, cookieOptions)
+        cookies.set('refreshToken', refreshToken, cookieOptions)
+        setSuccessMessage('Logged in successfully')
         setTimeout(() => {
           window.location.href = '/invoices'
-        }, 1500)
+        }, 500)
       },
       onError: (error: Error) => {
         setErrorMessage(error.message)

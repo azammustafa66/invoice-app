@@ -1,28 +1,23 @@
 import { Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
+import crypto from 'crypto'
 import 'dotenv/config'
 
-import { IUser } from '../types/types'
+import { CustomRequest, DecodedRefreshToken, IUser } from '../types/types'
 import User from '../models/user.model'
-
-const isDesktop = (req: Request) =>
-  req.headers['user-agent']?.includes('PostmanRuntime') ||
-  req.headers['user-agent']?.includes('Windows') ||
-  req.headers['user-agent']?.includes('Macintosh') ||
-  req.headers['sec-ch-ua-platform'] === 'Windows' ||
-  req.headers['sec-ch-ua-platform'] === 'macOS'
 
 const generateTokens = async (user: IUser) => {
   try {
     const accessToken = user.generateAccessToken()
     const refreshToken = user.generateRefreshToken()
+    const csrfToken = crypto.randomBytes(64).toString('hex')
 
-    if (!accessToken || !refreshToken) {
+    if (!accessToken || !refreshToken || !csrfToken) {
       throw new Error('Failed to generate tokens')
     }
 
     await User.updateOne({ _id: user._id }, { $set: { refreshToken } })
-    return { accessToken, refreshToken }
+    return { accessToken, refreshToken, csrfToken }
   } catch (error) {
     throw new Error('Failed to generate tokens')
   }
@@ -34,31 +29,15 @@ const sendResponse = (
   user: IUser,
   accessToken: string,
   refreshToken: string,
+  csrfToken: string,
   register = true
 ) => {
-  if (isDesktop(req)) {
-    res
-      .status(200)
-      .cookie('refreshToken', refreshToken, {
-        sameSite: 'none',
-        secure: process.env.NODE_ENV === 'production'
-      })
-      .cookie('accessToken', accessToken, {
-        sameSite: 'none',
-        secure: process.env.NODE_ENV === 'production'
-      })
-      .cookie('user', JSON.stringify(user), {
-        sameSite: 'none',
-        secure: process.env.NODE_ENV === 'production'
-      })
-      .json({ message: `User ${register ? 'registred' : 'logged in'} successfully` })
-  } else {
-    res.status(200).json({
-      user,
-      accessToken,
-      refreshToken
-    })
-  }
+  res.status(200).json({
+    user,
+    accessToken,
+    refreshToken,
+    csrfToken
+  })
 }
 
 export const register = async (req: Request, res: Response) => {
@@ -87,8 +66,8 @@ export const register = async (req: Request, res: Response) => {
       throw new Error('Failed to create user')
     }
 
-    const { accessToken, refreshToken } = await generateTokens(user)
-    sendResponse(req, res, user, accessToken, refreshToken)
+    const { accessToken, refreshToken, csrfToken } = await generateTokens(user)
+    sendResponse(req, res, user, accessToken, refreshToken, csrfToken)
   } catch (error: any) {
     return res.status(500).json({ message: error.message || 'Internal Server Error' })
   }
@@ -104,18 +83,77 @@ export const login = async (req: Request, res: Response) => {
   const user = await User.findOne({ email })
 
   if (!user) {
-    return res.status(404).json({ message: 'User not found' })
+    return res.status(404).json({ message: 'User does not exist' })
   }
 
-  if (!user.comparePassword(password)) {
-    return res.status(401).json({ message: 'Invalid password' })
+  const isPasswordValid = await user.comparePassword(password)
+
+  if (!isPasswordValid) {
+    return res.status(400).json({ message: 'Invalid credentials' })
   }
 
   const userWithoutSensitiveInfo = await User.findOne({ email }).select(
     '-refreshToken -password -__v'
   )
 
-  const { accessToken, refreshToken } = await generateTokens(user)
+  const { accessToken, refreshToken, csrfToken } = await generateTokens(user)
 
-  sendResponse(req, res, userWithoutSensitiveInfo!, accessToken, refreshToken, false)
+  sendResponse(req, res, userWithoutSensitiveInfo!, accessToken, refreshToken, csrfToken, false)
+}
+
+export async function refreshAccessToken(req: Request, res: Response) {
+  const incomingRefreshToken =
+    req.cookies?.refreshToken ?? req.headers?.authorization?.split(' ')[1]
+
+  if (!incomingRefreshToken) {
+    return res.status(401).json({ message: 'Unauthorized' })
+  }
+
+  const decoded = jwt.verify(
+    incomingRefreshToken,
+    process.env.REFRESH_TOKEN_SECRET!
+  ) as DecodedRefreshToken
+
+  const user = await User.findOne({ _id: decoded._id })
+
+  if (!user || user.refreshToken !== incomingRefreshToken) {
+    return res.status(401).json({ message: 'Unauthorized' })
+  }
+
+  const userWithoutSensitiveInfo = await User.findOne({ _id: decoded._id }).select(
+    '-refreshToken -password -__v'
+  )
+
+  const { accessToken, refreshToken: newRefreshToken, csrfToken } = await generateTokens(user)
+
+  sendResponse(req, res, userWithoutSensitiveInfo!, accessToken, newRefreshToken, csrfToken, false)
+}
+
+export const logout = async (req: CustomRequest, res: Response) => {
+  res
+    .status(200)
+    .clearCookie('refreshToken', {
+      sameSite: 'none',
+      secure: false,
+      httpOnly: false
+    })
+    .clearCookie('accessToken', {
+      sameSite: 'none',
+      secure: false,
+      httpOnly: false
+    })
+    .clearCookie('csrfToken', {
+      sameSite: 'none',
+      secure: false,
+      httpOnly: false
+    })
+    .clearCookie('user', {
+      sameSite: 'none',
+      secure: false,
+      httpOnly: false
+    })
+
+  await User.findOneAndUpdate({ _id: req.user?._id }, { $set: { refreshToken: '' } })
+
+  return res.json({ message: 'Logged out successfully' })
 }

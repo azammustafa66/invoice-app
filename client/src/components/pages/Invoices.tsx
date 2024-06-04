@@ -15,7 +15,7 @@ import InvoiceTable from '../Table'
 import { useStore } from '../../utils/store'
 import Form from '../Form'
 
-export default function Home() {
+export default function Invoices() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const { isFormOpen, setFormOpen } = useStore()
 

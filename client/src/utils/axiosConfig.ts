@@ -5,21 +5,18 @@ const cookies = new Cookies()
 
 const axiosConfig = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_URL as string,
-  headers: {
-    'Content-Type': 'application/json'
-  },
   withCredentials: true
 })
 
 axiosConfig.interceptors.request.use(
   (config) => {
-    const csrftoken = cookies.get('csrftoken')
-    if (csrftoken) {
-      config.headers['X-CSRFToken'] = csrftoken
-    }
-    const token = cookies.get('access_token')
+    const token = cookies.get('accessToken')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+    }
+    const csrfToken = cookies.get('csrfToken')
+    if (csrfToken) {
+      config.headers['X-CSRF-Token'] = csrfToken
     }
     return config
   },
@@ -32,7 +29,6 @@ axiosConfig.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      cookies.remove('access_token')
       window.location.href = '/login'
     }
     return Promise.reject(error)

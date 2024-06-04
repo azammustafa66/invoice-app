@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from 'react-query'
+import { ToastContainer } from 'react-toastify'
 
 import { Home, Register, Login, Navbar, Invoice, Invoices, Error } from './components'
 import ProtectedRoutes from './utils/ProtectedRoutes'
@@ -17,8 +18,9 @@ const queryClient = new QueryClient({
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Router>
+    <Router>
+      <QueryClientProvider client={queryClient}>
+        <ToastContainer />
         <Navbar />
         <Routes>
           <Route path='/' element={<Home />} />
@@ -34,7 +36,7 @@ export default function App() {
 
           <Route path='*' element={<Error />} />
         </Routes>
-      </Router>
-    </QueryClientProvider>
+      </QueryClientProvider>
+    </Router>
   )
 }
