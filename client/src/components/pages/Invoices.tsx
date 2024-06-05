@@ -94,7 +94,7 @@ export default function Invoices() {
               setIsNewInvoice(false)
             }}
           >
-            <Form isNew={true} invoiceId='' />
+            <Form invoice={{}} />
           </Drawer>
         </Box>
       </Box>

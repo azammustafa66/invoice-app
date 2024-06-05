@@ -8,7 +8,7 @@ import DOMPurify from 'dompurify'
 import axiosConfig from '../utils/axiosConfig'
 import { useStore } from '../zustand/store'
 import { RegisterFormData } from '../utils/types'
-import { cookieOptions } from '../utils/data'
+import { cookieOptions } from '../utils/constants'
 
 /*
  * Register hook to handle user registration

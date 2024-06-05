@@ -33,6 +33,10 @@ const invoiceSchema = new Schema<IInvoice>(
       ref: 'Address',
       required: true
     },
+    description : {
+      type: String,
+      required: true
+    },
     invoiceItems: [
       {
         type: Schema.Types.ObjectId,

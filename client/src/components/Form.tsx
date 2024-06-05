@@ -12,19 +12,16 @@ import {
 import { useForm, Controller, useFieldArray } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import DeleteIcon from '@mui/icons-material/Delete'
+import { format } from 'date-fns'
 
 import { invoiceValidationSchema } from '../utils/validationSchemas'
 import { FormBox, PrimaryTypography, SecondaryTypography } from '../utils/custom/elements'
-import { mockData } from '../utils/data'
 import { useStore } from '../zustand/store'
+import { Invoice } from '../utils/types'
+import axiosConfig from '../utils/axiosConfig'
 
-export default function Form({ invoiceId: id }: { isNew: boolean; invoiceId: string }) {
-  const data = mockData.find((d) => d.id === id)!
+export default function Form({ invoice }: { invoice: Invoice | object }) {
   const { isNewInvoice: isNew } = useStore()
-
-  if (!isNew) {
-    console.log(data)
-  }
 
   const theme = useTheme().palette.mode
   const {
@@ -37,23 +34,22 @@ export default function Form({ invoiceId: id }: { isNew: boolean; invoiceId: str
       ? {}
       : {
           senderAddress: {
-            street: data.senderAddress.street,
-            city: data.senderAddress.city,
-            postCode: data.senderAddress.postCode,
-            country: data.senderAddress.country
+            street: (invoice as Invoice).senderAddress.street,
+            city: (invoice as Invoice).senderAddress.city,
+            postCode: (invoice as Invoice).senderAddress.postCode,
+            country: (invoice as Invoice).senderAddress.country
           },
           clientAddress: {
-            street: data.clientAddress.street,
-            city: data.clientAddress.city,
-            postCode: data.clientAddress.postCode,
-            country: data.clientAddress.country
+            street: (invoice as Invoice).clientAddress.street,
+            city: (invoice as Invoice).clientAddress.city,
+            postCode: (invoice as Invoice).clientAddress.postCode,
+            country: (invoice as Invoice).clientAddress.country
           },
-          clientName: data.clientName,
-          clientEmail: data.clientEmail,
-          createdAt: data.createdAt,
-          paymentDue: data.paymentDue,
-          projectDescription: data.description,
-          items: data.items
+          clientName: (invoice as Invoice).client.name,
+          clientEmail: (invoice as Invoice).client.email,
+          createdAt: format((invoice as Invoice).createdAt, 'dd MMM yyyy'),
+          paymentDue: format((invoice as Invoice).paymentDue, 'dd MMM yyyy'),
+          items: (invoice as Invoice).invoiceItems
         }
   })
 
@@ -61,11 +57,6 @@ export default function Form({ invoiceId: id }: { isNew: boolean; invoiceId: str
     control,
     name: 'items'
   })
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onSubmit = (data: any) => {
-    console.log(data)
-  }
 
   const FormInput = styled(TextField)`
     border-radius: 4px;
@@ -86,6 +77,16 @@ export default function Form({ invoiceId: id }: { isNew: boolean; invoiceId: str
       -moz-appearance: textfield;
     }
   `
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onSubmit = async (data: any) => {
+    try {
+      isNew
+        ? await axiosConfig.post('/invoices', data)
+        : await axiosConfig.put(`/invoices/${(invoice as Invoice)._id}`, data)
+    } catch {
+      console.error('An error occurred while submitting the form')
+    }
+  }
 
   return (
     <FormControl
@@ -103,7 +104,7 @@ export default function Form({ invoiceId: id }: { isNew: boolean; invoiceId: str
     >
       <PrimaryTypography>
         {isNew && 'New Invoice'}
-        {isNew ? '' : ` #${id}`}
+        {isNew ? '' : ` #${(invoice as Invoice)._id}`}
       </PrimaryTypography>
 
       <FormBox>

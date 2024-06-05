@@ -3,7 +3,7 @@ import { Box, Container, Typography, Button, useTheme } from '@mui/material'
 import { format } from 'date-fns'
 
 import useInvoices from '../hooks/useInvoices'
-import { StatusColorsAndBackground } from '../utils/data'
+import { StatusColorsAndBackground } from '../utils/constants'
 import { Invoice } from '../utils/types'
 
 interface InvoicesProps {

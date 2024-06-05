@@ -56,6 +56,7 @@ export interface IInvoice extends Document {
   invoiceDate: Date
   clientAddress: Types.ObjectId | IAddress
   senderAddress: Types.ObjectId | IAddress
+  description: string
   paymentDue: Date
   status: 'paid' | 'pending' | 'draft'
   totalAmount: Number

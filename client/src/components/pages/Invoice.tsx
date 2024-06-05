@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Box, Button, CircularProgress, Container, Drawer, Stack, Typography } from '@mui/material'
 import { Link, useParams } from 'react-router-dom'
-
-import { StatusColorsAndBackground, mockData } from '../../utils/data'
+import { format } from 'date-fns'
+import { StatusColorsAndBackground } from '../../utils/constants'
 import { PrimaryTypography, SecondaryTypography } from '../../utils/custom/elements'
 import ConfirmationDialog from '../Dialog'
 import Form from '../Form'
@@ -10,31 +10,23 @@ import { useStore } from '../../zustand/store'
 import axiosConfig from '../../utils/axiosConfig'
 import { useMutation } from 'react-query'
 import { Invoice as InvoiceType } from '../../utils/types'
-import { set } from 'date-fns'
 
 export default function Invoice() {
   const { id: invoiceId } = useParams<{ id: string }>()
-
-  const { isFormOpen, setFormOpen } = useStore()
-
+  const { isFormOpen, setFormOpen, setIsNewInvoice } = useStore()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showMarkAsPaidDialog, setShowMarkAsPaidDialog] = useState(false)
   const [invoice, setInvoice] = useState<InvoiceType | null>(null)
+  const [errorMessage, setErrorMessage] = useState('')
 
   const mutation = useMutation(
-    'invoice',
     async () => {
       const response = await axiosConfig.get(`/invoices/${invoiceId}`)
-      setInvoice(response.data)
-      return response.data
+      return response.data.invoice
     },
     {
-      onSuccess: (data: InvoiceType) => {
-        console.log('Fetched invoice:', data)
-      },
-      onError: (error: Error) => {
-        console.error('Error fetching invoice:', error)
-      }
+      onSuccess: (data: InvoiceType) => setInvoice(data),
+      onError: (error: Error) => setErrorMessage(error?.message || 'An unknown error occurred')
     }
   )
 
@@ -52,9 +44,9 @@ export default function Invoice() {
 
   if (mutation.isError) {
     return (
-      <Container sx={{ display: 'flex', justifyContent: 'center' }}>
+      <Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         <Typography variant='h5' color='error'>
-          An error occurred while fetching the invoice
+          {mutation.error instanceof Error ? mutation.error.message : 'An unknown error occurred'}
         </Typography>
       </Container>
     )
@@ -64,21 +56,14 @@ export default function Invoice() {
     return (
       <Container sx={{ display: 'flex', justifyContent: 'center' }}>
         <Typography variant='h5' color='error'>
-          Invoice does not exist
+          {errorMessage}
         </Typography>
       </Container>
     )
   }
 
   return (
-    <Container
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '20px',
-        marginTop: '2rem'
-      }}
-    >
+    <Container sx={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '2rem' }}>
       <Box>
         <Link to={'/invoices'}>
           <SecondaryTypography
@@ -86,16 +71,13 @@ export default function Invoice() {
               letterSpacing: '-0.25px',
               color: '#7C5DFA',
               textDecoration: 'none',
-              '&:hover': {
-                textDecoration: 'underline'
-              }
+              '&:hover': { textDecoration: 'underline' }
             }}
           >
             &lt; Go back
           </SecondaryTypography>
         </Link>
       </Box>
-
       <Box
         sx={{
           display: 'flex',
@@ -107,13 +89,7 @@ export default function Invoice() {
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <Typography
-            sx={{
-              fontSize: '13px',
-              fontWeight: 500,
-              color: '#6E7E91'
-            }}
-          >
+          <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#6E7E91' }}>
             Status
           </Typography>
           <Button
@@ -144,12 +120,15 @@ export default function Invoice() {
               borderRadius: '24px',
               padding: '5px 10px'
             }}
-            onClick={() => setFormOpen(true)}
+            onClick={() => {
+              setFormOpen(true)
+              setIsNewInvoice(false)
+            }}
           >
             Edit
           </Button>
           <Drawer anchor='left' open={isFormOpen} onClose={() => setFormOpen(false)}>
-            <Form isNew={false} invoiceId={invoiceId!} />
+            <Form invoice={invoice} />
           </Drawer>
           <Button
             variant='outlined'
@@ -179,26 +158,21 @@ export default function Invoice() {
               Mark as Paid
             </Button>
           )}
-
-          {/* Confirmation Dialogs */}
           <ConfirmationDialog
             open={showDeleteDialog}
             onClose={() => setShowDeleteDialog(false)}
             onConfirm={() => {
-              // Delete logic here
               console.log('Deleting invoice:', invoice._id)
             }}
             title='Delete Invoice?'
             content='Are you sure you want to delete this invoice? This action cannot be undone.'
             confirmButtonText='Delete'
-            confirmButtonColor='error' // Set color for delete button
+            confirmButtonColor='error'
           />
-
           <ConfirmationDialog
             open={showMarkAsPaidDialog}
             onClose={() => setShowMarkAsPaidDialog(false)}
             onConfirm={() => {
-              // Mark as paid logic here
               console.log('Marking invoice as paid:', invoice._id)
             }}
             title='Mark as Paid?'
@@ -206,7 +180,6 @@ export default function Invoice() {
             confirmButtonText='Mark as Paid'
             confirmButtonColor='success'
           />
-
           {invoice.status === 'draft' && (
             <Button
               variant='outlined'
@@ -216,16 +189,13 @@ export default function Invoice() {
                 borderRadius: '24px',
                 padding: '5px 10px'
               }}
-              onClick={() => {
-                // Add it to DB
-              }}
+              onClick={() => {}} // Add it to DB
             >
               Save as New Invoice
             </Button>
           )}
         </Box>
       </Box>
-
       <Box
         sx={{
           display: 'flex',
@@ -247,34 +217,29 @@ export default function Invoice() {
           }}
         >
           <Box>
-            <SecondaryTypography
-              sx={{
-                fontSize: '15px',
-                fontWeight: 700
-              }}
-            >
-              <span style={{ color: '#888EB0' }}>#</span>
-              {invoice._id}
+            <SecondaryTypography sx={{ fontSize: '15px', fontWeight: 700 }}>
+              <span style={{ color: '#888EB0' }}>#</span> {invoice._id}
             </SecondaryTypography>
-            <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#888EB0' }}>{}</Typography>
+            <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#888EB0' }}>
+              {/* Add any additional details if required */}
+            </Typography>
           </Box>
           <Stack sx={{ maxWidth: '150px' }}>
             <SecondaryTypography color={'#DFE3FA'}>
-              {invoice.senderAddress?.street}{' '}
+              {invoice.senderAddress?.street}
             </SecondaryTypography>
             <SecondaryTypography color={'#DFE3FA'}>
-              {invoice.senderAddress?.city},
+              {invoice.senderAddress?.city}
             </SecondaryTypography>
             <SecondaryTypography color={'#DFE3FA'}>
-              {invoice.senderAddress?.country},
+              {invoice.senderAddress?.country}
             </SecondaryTypography>
             <SecondaryTypography color={'#DFE3FA'}>
               {invoice.senderAddress?.postCode}
             </SecondaryTypography>
           </Stack>
         </Box>
-
-        {/* Invoice date, client address and email */}
+        {/* Invoice date, client address, and email */}
         <Box
           sx={{
             display: 'flex',
@@ -288,16 +253,15 @@ export default function Invoice() {
               <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#888EB0' }}>
                 Invoice Date
               </Typography>
-              <SecondaryTypography>{invoice.createdAt}</SecondaryTypography>
+              <SecondaryTypography>{format(invoice.createdAt, 'dd MMM yyyy')}</SecondaryTypography>
             </Box>
             <Box>
               <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#888EB0' }}>
                 Payment Due
               </Typography>
-              <SecondaryTypography>{invoice.paymentDue}</SecondaryTypography>
+              <SecondaryTypography>{format(invoice.paymentDue, 'dd MMM yyyy')}</SecondaryTypography>
             </Box>
           </Stack>
-
           <Stack spacing={2}>
             <Box>
               <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#888EB0' }}>
@@ -310,17 +274,16 @@ export default function Invoice() {
                 {invoice.clientAddress?.street}
               </SecondaryTypography>
               <SecondaryTypography sx={{ fontSize: '13px', fontWeight: 500, color: '#888EB0' }}>
-                {invoice.clientAddress?.city},
+                {invoice.clientAddress?.city}
               </SecondaryTypography>
               <SecondaryTypography sx={{ fontSize: '13px', fontWeight: 500, color: '#888EB0' }}>
-                {invoice.clientAddress?.country},
+                {invoice.clientAddress?.country}
               </SecondaryTypography>
               <SecondaryTypography sx={{ fontSize: '13px', fontWeight: 500, color: '#888EB0' }}>
                 {invoice.clientAddress?.postCode}
               </SecondaryTypography>
             </Box>
           </Stack>
-
           <Stack spacing={2}>
             <Box>
               <SecondaryTypography sx={{ fontSize: '13px', fontWeight: 500, color: '#888EB0' }}>
@@ -330,7 +293,6 @@ export default function Invoice() {
             </Box>
           </Stack>
         </Box>
-
         {/* Items */}
         <Box>
           <Box
@@ -379,7 +341,6 @@ export default function Invoice() {
             </Box>
           ))}
         </Box>
-
         {/* Total */}
         <Box
           sx={{

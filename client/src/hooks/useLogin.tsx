@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom'
 import axiosConfig from '../utils/axiosConfig'
 import { useStore } from '../zustand/store'
 import { LoginFormData } from '../utils/types'
-import { cookieOptions } from '../utils/data'
+import { cookieOptions } from '../utils/constants'
 
 export default function useLogin() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
