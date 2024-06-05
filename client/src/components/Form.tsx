@@ -10,54 +10,29 @@ import {
   Typography
 } from '@mui/material'
 import { useForm, Controller, useFieldArray } from 'react-hook-form'
-import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup'
 import DeleteIcon from '@mui/icons-material/Delete'
 
+import { invoiceValidationSchema } from '../utils/validationSchemas'
 import { FormBox, PrimaryTypography, SecondaryTypography } from '../utils/custom/elements'
 import { mockData } from '../utils/data'
+import { useStore } from '../zustand/store'
 
-const validationSchema = yup.object().shape({
-  senderAddress: yup.object().shape({
-    street: yup.string().required('Street Address is required'),
-    city: yup.string().required('City is required'),
-    postCode: yup.string().required('Postal Code is required'),
-    country: yup.string().required('Country is required')
-  }),
-
-  clientAddress: yup.object().shape({
-    street: yup.string().required('Street Address is required'),
-    city: yup.string().required('City is required'),
-    postCode: yup.string().required('Postal Code is required'),
-    country: yup.string().required('Country is required')
-  }),
-
-  clientName: yup.string().required('Client Name is required'),
-  clientEmail: yup.string().email('Invalid email').required('Client Email is required'),
-  invoiceDate: yup.string().required('Invoice Date is required'),
-  paymentDue: yup.string().required('Payment Due Date is required'),
-  projectDescription: yup.string().required('Project Description is required'),
-
-  items: yup.array().of(
-    yup.object().shape({
-      name: yup.string().required('Item Name is required'),
-      quantity: yup.number().positive().integer().required('Quantity is required'),
-      price: yup.number().positive().required('Price is required'),
-      total: yup.number().positive().required('Total is required')
-    })
-  )
-})
-
-export default function Form({ isNew, invoiceId: id }: { isNew: boolean; invoiceId: string }) {
+export default function Form({ invoiceId: id }: { isNew: boolean; invoiceId: string }) {
   const data = mockData.find((d) => d.id === id)!
+  const { isNewInvoice: isNew } = useStore()
 
-  const theme = useTheme()
+  if (!isNew) {
+    console.log(data)
+  }
+
+  const theme = useTheme().palette.mode
   const {
     control,
     handleSubmit,
     formState: { errors }
   } = useForm({
-    resolver: yupResolver(validationSchema),
+    resolver: yupResolver(invoiceValidationSchema),
     defaultValues: isNew
       ? {}
       : {
@@ -75,7 +50,7 @@ export default function Form({ isNew, invoiceId: id }: { isNew: boolean; invoice
           },
           clientName: data.clientName,
           clientEmail: data.clientEmail,
-          invoiceDate: data.createdAt,
+          createdAt: data.createdAt,
           paymentDue: data.paymentDue,
           projectDescription: data.description,
           items: data.items
@@ -94,9 +69,9 @@ export default function Form({ isNew, invoiceId: id }: { isNew: boolean; invoice
 
   const FormInput = styled(TextField)`
     border-radius: 4px;
-    ${theme.palette.mode === 'dark' ? 'background-color: #1E2139;' : 'background-color: #fff;'}
-    ${theme.palette.mode === 'dark' ? 'color: #ffffff;' : 'color: #0c0e16;'}
-  font-size: 15px;
+    ${theme === 'dark' ? 'background-color: #1E2139;' : 'background-color: #fff;'}
+    ${theme === 'dark' ? 'color: #ffffff;' : 'color: #0c0e16;'}
+    font-size: 15px;
     font-style: normal;
     font-weight: 700;
     line-height: 18px;
@@ -120,7 +95,7 @@ export default function Form({ isNew, invoiceId: id }: { isNew: boolean; invoice
         flexDirection: 'column',
         gap: '25px',
         p: '2rem',
-        background: `${theme.palette.mode === 'dark' ? '#111' : '#f9fafe'}`,
+        background: `${theme === 'dark' ? '#111' : '#f9fafe'}`,
         scrollbarWidth: 'none'
       }}
       component='form'
@@ -298,14 +273,14 @@ export default function Form({ isNew, invoiceId: id }: { isNew: boolean; invoice
               Invoice Date
             </Typography>
             <Controller
-              name='invoiceDate'
+              name='createdAt'
               control={control}
               render={({ field }) => (
                 <FormInput
                   {...field}
                   type='date'
-                  error={!!errors.invoiceDate}
-                  helperText={errors.invoiceDate?.message}
+                  error={!!errors.createdAt}
+                  helperText={errors.createdAt?.message}
                   sx={{
                     ':focus': { cursor: 'text' }
                   }}
@@ -430,7 +405,7 @@ export default function Form({ isNew, invoiceId: id }: { isNew: boolean; invoice
                     sx={{
                       cursor: 'pointer',
                       alignSelf: 'center',
-                      color: `${theme.palette.mode === 'dark' ? '#7E88C3' : '#888EB0'}`
+                      color: `${theme === 'dark' ? '#7E88C3' : '#888EB0'}`
                     }}
                   />
                 </IconButton>

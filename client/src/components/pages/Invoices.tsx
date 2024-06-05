@@ -7,17 +7,20 @@ import {
   IconButton,
   Menu,
   MenuItem,
-  Drawer
+  Drawer,
+  CircularProgress
 } from '@mui/material'
 import { KeyboardArrowDown as ArrowDownIcon } from '@mui/icons-material'
 
-import InvoiceTable from '../Table'
-import { useStore } from '../../utils/store'
+import InvoiceTable from '../InvoiceTable'
+import useInvoices from '../../hooks/useInvoices'
+import { useStore } from '../../zustand/store'
 import Form from '../Form'
 
 export default function Invoices() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-  const { isFormOpen, setFormOpen } = useStore()
+  const { isFormOpen, setFormOpen, setIsNewInvoice } = useStore()
+  const { isLoading, isError, error, invoices } = useInvoices()
 
   const handleClose = () => {
     setAnchorEl(null)
@@ -76,11 +79,21 @@ export default function Invoices() {
                 backgroundColor: '#5A3BFA'
               }
             }}
-            onClick={() => setFormOpen(true)}
+            onClick={() => {
+              setFormOpen(true)
+              setIsNewInvoice(true)
+            }}
           >
             New Invoice
           </Button>
-          <Drawer anchor='left' open={isFormOpen} onClose={() => setFormOpen(false)}>
+          <Drawer
+            anchor='left'
+            open={isFormOpen}
+            onClose={() => {
+              setFormOpen(false)
+              setIsNewInvoice(false)
+            }}
+          >
             <Form isNew={true} invoiceId='' />
           </Drawer>
         </Box>
@@ -96,9 +109,46 @@ export default function Invoices() {
         }}
         variant='body1'
       >
-        There are 7 total invoices
+        {`There are ${invoices ? invoices.length : 0} total invoices`}
       </Typography>
-      <InvoiceTable />
+
+      {isLoading ? (
+        <Box
+          sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}
+        >
+          <CircularProgress />
+        </Box>
+      ) : isError ? (
+        <Typography
+          sx={{
+            fontSize: '16px',
+            color: '#888EB0',
+            fontWeight: '500',
+            lineHeight: '1.5',
+            letterSpacing: '-0.1px',
+            textAlign: 'center'
+          }}
+          variant='body1'
+        >
+          {error && error.message}
+        </Typography>
+      ) : invoices && invoices.length > 0 ? (
+        <InvoiceTable invoices={invoices} />
+      ) : (
+        <Typography
+          sx={{
+            fontSize: '16px',
+            color: '#888EB0',
+            fontWeight: '500',
+            lineHeight: '1.5',
+            letterSpacing: '-0.1px',
+            textAlign: 'center'
+          }}
+          variant='body1'
+        >
+          No invoices
+        </Typography>
+      )}
     </Container>
   )
 }

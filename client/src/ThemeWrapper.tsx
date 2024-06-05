@@ -3,7 +3,7 @@ import CssBaseline from '@mui/material/CssBaseline'
 import { createTheme } from '@mui/material/styles'
 
 import App from './App'
-import { useStore } from './utils/store'
+import { useStore } from './zustand/store'
 
 const darkTheme = createTheme({
   palette: {

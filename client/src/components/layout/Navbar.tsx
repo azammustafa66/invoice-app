@@ -12,39 +12,32 @@ import MenuItem from '@mui/material/MenuItem'
 import DarkModeIcon from '@mui/icons-material/DarkMode'
 import LightModeIcon from '@mui/icons-material/LightMode'
 import PieChartIcon from '@mui/icons-material/PieChart'
-import { Link } from 'react-router-dom'
-import { Cookies } from 'react-cookie'
+import { Link, useNavigate } from 'react-router-dom'
 
-import { useStore } from '../../utils/store'
+import { useStore } from '../../zustand/store'
 import { useTheme } from '@mui/material'
-import axiosConfig from '../../utils/axiosConfig'
 
 function Navbar() {
-  const { theme, setTheme, user } = useStore()
+  const { theme, setTheme, user, isAuthenticated, logout } = useStore()
   const mode = useTheme().palette.mode
-  const cookies = new Cookies()
+  const navigate = useNavigate()
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null)
 
   const handleCloseUserMenu = () => {
     setAnchorElUser(null)
   }
 
-  const handleLogOut = async () => {
-    const response = await axiosConfig.post('/auth/logout')
-    if (response.status === 200) {
-      cookies.remove('accessToken')
-      cookies.remove('refreshToken')
-      cookies.remove('csrfToken')
-      cookies.remove('user')
-      window.location.href = '/login'
-    }
-  }
-
   const settings = [
     { label: 'Profile', path: '/profile' },
     { label: 'Account', path: '/account' },
     { label: 'Dashboard', path: '/invoices' },
-    { label: 'Logout', action: () => handleLogOut() }
+    {
+      label: 'Logout',
+      action: () => {
+        logout()
+        navigate('/login')
+      }
+    }
   ]
 
   return (
@@ -83,10 +76,10 @@ function Navbar() {
                 )}
               </IconButton>
 
-              {cookies.get('accessToken') && (
+              {isAuthenticated && (
                 <Tooltip title='Open settings'>
                   <IconButton onClick={(e) => setAnchorElUser(e.currentTarget)} sx={{ p: 0 }}>
-                    <Avatar alt={user?.name}>{user?.name}</Avatar>
+                    <Avatar alt={user?.name}>{user?.name?.split('')[0]}</Avatar>
                   </IconButton>
                 </Tooltip>
               )}

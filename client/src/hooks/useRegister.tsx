@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useMutation } from 'react-query'
+import { useNavigate } from 'react-router-dom'
 import { Cookies } from 'react-cookie'
 import axios from 'axios'
 import DOMPurify from 'dompurify'
 
 import axiosConfig from '../utils/axiosConfig'
-import { useStore } from '../utils/store'
+import { useStore } from '../zustand/store'
 import { RegisterFormData } from '../utils/types'
 import { cookieOptions } from '../utils/data'
 
@@ -22,7 +23,8 @@ export default function useRegister() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const cookies = new Cookies()
-  const { setUser } = useStore()
+  const navigate = useNavigate()
+  const { setUser, setIsAuthenticated } = useStore()
 
   const mutation = useMutation(
     async (data: RegisterFormData) => {
@@ -42,14 +44,15 @@ export default function useRegister() {
     {
       onSuccess: (response) => {
         const { csrfToken, user, accessToken, refreshToken } = response
+        setIsAuthenticated(true)
         setUser(user)
         cookies.set('csrfToken', csrfToken, cookieOptions)
         cookies.set('accessToken', accessToken, cookieOptions)
         cookies.set('refreshToken', refreshToken, cookieOptions)
         setSuccessMessage('Logged in successfully')
         setTimeout(() => {
-          window.location.href = '/invoices'
-        }, 500)
+          navigate('/invoices')
+        }, 1500)
       },
       onError: (error: Error) => {
         setErrorMessage(error.message)

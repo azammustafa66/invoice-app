@@ -30,7 +30,6 @@ const sendResponse = (
   accessToken: string,
   refreshToken: string,
   csrfToken: string,
-  register = true
 ) => {
   res.status(200).json({
     user,
@@ -98,7 +97,7 @@ export const login = async (req: Request, res: Response) => {
 
   const { accessToken, refreshToken, csrfToken } = await generateTokens(user)
 
-  sendResponse(req, res, userWithoutSensitiveInfo!, accessToken, refreshToken, csrfToken, false)
+  sendResponse(req, res, userWithoutSensitiveInfo!, accessToken, refreshToken, csrfToken)
 }
 
 export async function refreshAccessToken(req: Request, res: Response) {
@@ -126,7 +125,7 @@ export async function refreshAccessToken(req: Request, res: Response) {
 
   const { accessToken, refreshToken: newRefreshToken, csrfToken } = await generateTokens(user)
 
-  sendResponse(req, res, userWithoutSensitiveInfo!, accessToken, newRefreshToken, csrfToken, false)
+  sendResponse(req, res, userWithoutSensitiveInfo!, accessToken, newRefreshToken, csrfToken)
 }
 
 export const logout = async (req: CustomRequest, res: Response) => {

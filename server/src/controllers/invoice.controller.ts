@@ -113,3 +113,92 @@ export const createInvoice = async (req: CustomRequest, res: Response) => {
       .json({ message: error.message || 'Unable to create an invoice. Please try again later.' })
   }
 }
+
+export const updateInvoice = async (req: CustomRequest, res: Response) => {
+  try {
+    const { clientName, clientEmail, clientAddress, senderAddress, invoiceItems } = req.body
+
+    if (!(clientName && clientEmail && clientAddress && senderAddress && invoiceItems.length > 0)) {
+      // Check if invoice items array has elements
+      return res
+        .status(400)
+        .json({ message: 'Please provide all required fields and at least one invoice item' })
+    }
+
+    // 1. Check if client exists, create if not:
+    const client = await Client.findOneAndUpdate(
+      { email: clientEmail },
+      { $setOnInsert: { name: clientName, email: clientEmail } },
+      { upsert: true, new: true }
+    )
+
+    // 2. Check if addresses exist, create if not:
+    const sender = await Address.findOneAndUpdate(
+      { ...senderAddress },
+      { $setOnInsert: { ...senderAddress } },
+      { upsert: true, new: true }
+    )
+    const clientAddr = await Address.findOneAndUpdate(
+      { ...clientAddress },
+      { $setOnInsert: { ...clientAddress } },
+      { upsert: true, new: true }
+    )
+
+    // 3. Create Invoice Items (and calculate totalAmount in one step)
+    let totalAmount = 0
+    const invoiceItemIds = await Promise.all(
+      invoiceItems.map(async (item: IInvoiceItem) => {
+        item.total = item.quantity * item.price
+        totalAmount += item.total
+        const newItem = new InvoiceItem(item)
+        return (await newItem.save())._id
+      })
+    )
+
+    // 4. Update Invoice:
+    const updatedInvoice = await Invoice.findOneAndUpdate(
+      { _id: req.params.id, createdBy: req.user?._id },
+      {
+        paymentDue: req.body.paymentDue,
+        client: client._id,
+        clientAddress: clientAddr._id,
+        senderAddress: sender._id,
+        invoiceItems: invoiceItemIds,
+        totalAmount
+      },
+      { new: true }
+    )
+
+    if (!updatedInvoice) {
+      return res.status(404).json({ message: 'Invoice not found' })
+    }
+
+    // Populate for the response:
+    const populatedInvoice = await Invoice.findById(updatedInvoice._id)
+      .populate('client')
+      .populate('invoiceItems')
+      .populate('senderAddress')
+      .populate('clientAddress')
+  } catch (error: any) {
+    return res
+      .status(500)
+      .json({ message: error.message || 'Unable to update the invoice. Please try again later.' })
+  }
+}
+
+export const deleteInvoice = async (req: CustomRequest, res: Response) => {
+  try {
+    const deletedInvoice = await Invoice.findOneAndDelete({
+      _id: req.params.id,
+      createdBy: req.user?._id
+    })
+
+    if (!deletedInvoice) {
+      return res.status(404).json({ message: 'Invoice not found' })
+    }
+
+    res.status(200).json({ message: 'Invoice deleted successfully' })
+  } catch (error: any) {
+    res.status(500).json({ message: error.message || 'Internal Server Error' })
+  }
+}

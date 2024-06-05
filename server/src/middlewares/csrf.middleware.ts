@@ -6,8 +6,6 @@ const verifyCsrfToken = (req: Request, res: Response, next: NextFunction) => {
       const csrfTokenCookie = req.cookies?.csrfToken
       const csrfTokenHeader = req.headers?.['x-csrf-token'] as string
 
-      console.log(`CSRF token cookie: ${csrfTokenCookie} - CSRF token header: ${csrfTokenHeader}`)
-
       if (!(csrfTokenCookie || csrfTokenHeader)) {
         console.error('CSRF token mismatch or missing')
         return res.status(403).json({ error: 'Invalid or missing CSRF token' })

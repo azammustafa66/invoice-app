@@ -1,13 +1,13 @@
-import { Cookies } from 'react-cookie'
 import { useNavigate } from 'react-router-dom'
 
+import { useStore } from '../zustand/store'
+
 export default function useAuth() {
-  const cookies = new Cookies()
   const navigate = useNavigate()
+  const { isAuthenticated } = useStore()
 
   const protectedRoutes = ['/invoices', '/invoice/:id', '/profile', '/account']
-
-  const isAuthenticated = () => !!cookies.get('accessToken')
+  const publicRoutes = ['/login', '/register']
 
   const isProtectedRoute = (pathname: string) => {
     return protectedRoutes.some((route) => {
@@ -20,11 +20,17 @@ export default function useAuth() {
     })
   }
 
-  const handleAuthentication = (pathname: string) => {
-    if (!isAuthenticated() && isProtectedRoute(pathname)) {
-      navigate('/login', { state: { from: pathname } })
+  const handlePublicRoutes = (pathname: string) => {
+    if (isAuthenticated && publicRoutes.includes(pathname)) {
+      return navigate('/invoices', { replace: true })
     }
   }
 
-  return { isAuthenticated, isProtectedRoute, handleAuthentication }
+  const handleAuthentication = (pathname: string) => {
+    if (!isAuthenticated && isProtectedRoute(pathname)) {
+      return navigate('/login', { state: { from: pathname }, replace: true })
+    }
+  }
+
+  return { handleAuthentication, handlePublicRoutes }
 }
